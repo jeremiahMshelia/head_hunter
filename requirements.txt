@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+discord.py
+groq
+feedparser
+python-dotenv
+beautifulsoup4
+httpx
+lxml
