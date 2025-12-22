@@ -148,19 +148,29 @@ async def scan_all(notify_callback, ignore_analysis=False, force_rescan=False):
         await process_job(job['title'], job['description'], job['link'], job['id'], "Himalayas")
 
     # RSS
-    for feed_url in RSS_FEEDS:
-        try:
-            feed = feedparser.parse(feed_url)
-            for entry in feed.entries:
-                job_id = entry.get('id', entry.get('link'))
-                if not is_recent(entry): continue
+    async with httpx.AsyncClient() as client:
+        for feed_url in RSS_FEEDS:
+            try:
+                # Fetch asynchronously to prevent blocking the event loop
+                response = await client.get(feed_url, timeout=20.0, follow_redirects=True)
+                if response.status_code != 200:
+                    print(f"RSS Fetch Error {feed_url}: {response.status_code}")
+                    continue
+                    
+                feed = feedparser.parse(response.text)
                 
-                title = entry.get('title', 'No Title')
-                link = entry.get('link', '')
-                desc = entry.get('description', '') or entry.get('summary', '')
-                
-                await process_job(title, desc, link, job_id, "RSS")
-        except Exception as e:
-            print(f"RSS Error {feed_url}: {e}")
+                for entry in feed.entries:
+                    job_id = entry.get('id', entry.get('link'))
+                    
+                    # Time filter inside loop to avoid unnecessary processing
+                    if not is_recent(entry): continue
+                    
+                    title = entry.get('title', 'No Title')
+                    link = entry.get('link', '')
+                    desc = entry.get('description', '') or entry.get('summary', '')
+                    
+                    await process_job(title, desc, link, job_id, "RSS")
+            except Exception as e:
+                print(f"RSS Error {feed_url}: {e}")
             
     print("Scan complete.")

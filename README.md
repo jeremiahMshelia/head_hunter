@@ -37,14 +37,27 @@ An intelligent, interactive Discord Job Agent that finds tailored Design Enginee
 
 ## 🚀 Deployment (Render)
 
-1. Create a **Web Service** on Render connected to this repo.
-2. **Build Command**: `pip install -r requirements.txt`
-3. **Start Command**: `uvicorn main:app --host 0.0.0.0 --port 10000`
-4. **Environment Variables**: Add `GROQ_API_KEY` and `DISCORD_TOKEN`.
+1. **Push to GitHub**: Commit your code and push it to a new GitHub repository.
+2. **Create Web Service**:
+   - Go to [Render Dashboard](https://dashboard.render.com).
+   - Click **New +** -> **Web Service**.
+   - Connect your GitHub repo.
+3. **Configure Settings**:
+   - **Name**: `head-hunter-bot`
+   - **Runtime**: Python 3
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port 10000`
+4. **Environment Variables** (Scroll down to "Environment"):
+   - Key: `GROQ_API_KEY` | Value: `gsk_...`
+   - Key: `DISCORD_TOKEN` | Value: `...`
+5. **Deploy**: Click **Create Web Service**.
 
-### ⚠️ Critical Checks
-1. **Discord Portal**: Go to [Discord Developer Portal](https://discord.com/developers/applications) -> Your Bot -> **Bot** Tab -> Enable **MESSAGE CONTENT INTENT**. (Required for the bot to read your commands).
-2. **Free Tier**: If using Render Free Tier, the bot will sleep after 15 mins of inactivity. Use a free service like **UptimeRobot** to ping `https://your-bot.onrender.com` every 5 minutes to keep it alive.
+### ⚠️ Keeping it Alive (Free Tier)
+Render's free tier spins down after 15 mins of inactivity. To keep your bot 24/7:
+1. Copy your Render URL (e.g., `https://head-hunter.onrender.com`).
+2. Set up a free monitor on [UptimeRobot](https://uptimerobot.com).
+3. Create a **HTTP Monitor** that pings your URL every 5 minutes.
+This keeps the web server awake, which keeps the Bot alive!
 
 ## 🕹 Commands
 - `!start`: Activate 30-min auto-scan.
