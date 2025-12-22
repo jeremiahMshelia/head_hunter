@@ -22,7 +22,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
-def home():
+@app.head("/")
+async def home():
     return {
         "status": "HeadHunter Active", 
         "bot_user": str(bot.user) if bot.user else "Starting..."

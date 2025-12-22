@@ -108,6 +108,72 @@ async def scrape_himalayas():
     print(f"Himalayas: Found {len(jobs)} relevant jobs.")
     return jobs
 
+async def scrape_remoteok():
+    """Fetches jobs from RemoteOK API (Bypasses RSS 403)."""
+    print("Scraping RemoteOK API...")
+    url = "https://remoteok.com/api"
+    # Filter by tag if needed, e.g. ?tag=react. For now, fetch all.
+    headers = {"User-Agent": "Mozilla/5.0 (HeadHunter Bot)"}
+    
+    try:
+        async with httpx.AsyncClient(headers=headers) as client:
+            resp = await client.get(url, timeout=20.0, follow_redirects=True)
+            if resp.status_code != 200:
+                print(f"RemoteOK API Error: {resp.status_code}")
+                return []
+            
+            data = resp.json() # List of jobs
+            # First item is usually legal disclaimer/metadata, skip it if no 'id'
+            jobs = []
+            for item in data:
+                if 'id' not in item: continue 
+                
+                # Check date? RemoteOK date is ISO string. 
+                # For simplicity, we trust "Silent Calibration" to handle duplicates.
+                
+                jobs.append({
+                    'id': f"remoteok-{item['id']}",
+                    'title': item.get('position', 'No Title'),
+                    'company': item.get('company', 'Unknown'),
+                    'link': item.get('url', ''),
+                    'description': item.get('description', '')
+                })
+            print(f"RemoteOK: Found {len(jobs)} jobs.")
+            return jobs
+    except Exception as e:
+        print(f"RemoteOK Exception: {e}")
+        return []
+
+async def scrape_remotive():
+    """Fetches jobs from Remotive API."""
+    print("Scraping Remotive API...")
+    url = "https://remotive.com/api/remote-jobs?category=design&category=software-dev"
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(url, timeout=20.0)
+            if resp.status_code != 200:
+                print(f"Remotive API Error: {resp.status_code}")
+                return []
+            
+            data = resp.json()
+            items = data.get('jobs', [])
+            
+            jobs = []
+            for item in items:
+                jobs.append({
+                    'id': f"remotive-{item['id']}",
+                    'title': item.get('title'),
+                    'company': item.get('company_name'),
+                    'link': item.get('url'),
+                    'description': item.get('description')
+                })
+            print(f"Remotive: Found {len(jobs)} jobs.")
+            return jobs
+    except Exception as e:
+        print(f"Remotive Exception: {e}")
+        return []
+
 async def scan_all(notify_callback, ignore_analysis=False, force_rescan=False):
     """Orchestrates all scrapers. 
        - ignore_analysis=True: Silent learning (Startup).
@@ -133,7 +199,6 @@ async def scan_all(notify_callback, ignore_analysis=False, force_rescan=False):
             analysis = await analyze_job(job_title, job_desc)
             if analysis and analysis.get('match_score', 0) >= 85:
                 print(f"MATCH: {analysis['match_score']}")
-                # If forcing rescan, maybe add a tag to title?
                 display_title = f"[Rescan] {job_title}" if force_rescan else job_title
                 await notify_callback(analysis, job_link, display_title)
 
@@ -147,7 +212,17 @@ async def scan_all(notify_callback, ignore_analysis=False, force_rescan=False):
     for job in himalayas_jobs:
         await process_job(job['title'], job['description'], job['link'], job['id'], "Himalayas")
 
-    # RSS
+    # RemoteOK (API)
+    remoteok_jobs = await scrape_remoteok()
+    for job in remoteok_jobs:
+        await process_job(job['title'], job['description'], job['link'], job['id'], "RemoteOK")
+        
+    # Remotive (API)
+    remotive_jobs = await scrape_remotive()
+    for job in remotive_jobs:
+         await process_job(job['title'], job['description'], job['link'], job['id'], "Remotive")
+
+    # RSS (Remaining feeds)
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
