@@ -8,9 +8,15 @@ An intelligent, interactive Discord Job Agent that finds tailored Design Enginee
 - **Smart Analysis (Groq/Llama3)**: 
     - Analyzes **Company Vibe** and **Pain Points**.
     - Matches against your **Specific Projects** (Visual Vault, Mercer & Co, etc.).
+- **Source Hunter Strategy** 🕵️‍♀️:
+    - Automatically bypasses aggregator paywalls (e.g., WeWorkRemotely $3 fees).
+    - **Hybrid Logic**:
+        - **Phase 1 (Sniper)**: Guesses direct ATS links (Ashby, Greenhouse, Lever).
+        - **Phase 2 (Net)**: Falls back to DuckDuckGo Search to find the real careers page.
+    - Delivers **Direct Application Links** to Discord.
 - **Interactive Discord Bot**:
     - **Notifications**: Rich Embeds with Match Score, Vibe, and Reasoning.
-    - **Refinement**: Reply to any job instanly to rewrite the cover letter.
+    - **Refinement**: Reply to any job instantly to rewrite the cover letter.
     - **Commands**: `!scan`, `!scan force`, `!start`, `!stop`.
 
 ## 🛠 Tech Stack

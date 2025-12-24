@@ -1,6 +1,7 @@
 import httpx
 from bs4 import BeautifulSoup
-from utils import is_potentially_relevant, is_recent, load_seen_jobs, save_seen_jobs
+import asyncio
+from utils import is_potentially_relevant, is_recent, load_seen_jobs, save_seen_jobs, find_direct_application_link
 from config import INCLUDE_KEYWORDS, EXCLUDE_KEYWORDS, RSS_FEEDS, MAX_JOB_AGE_DAYS
 from ai_agent import analyze_job
 import feedparser
@@ -199,8 +200,24 @@ async def scan_all(notify_callback, ignore_analysis=False, force_rescan=False):
             analysis = await analyze_job(job_title, job_desc)
             if analysis and analysis.get('match_score', 0) >= 85:
                 print(f"MATCH: {analysis['match_score']}")
+                
+                # Sourcing Logic
+                final_link = job_link
+                company_name = analysis.get('company')
+                
+                if company_name and company_name != "Unknown":
+                    print(f"[{source}] 🕵️‍♀️ Source Hunting for {company_name}...")
+                    try:
+                        # Direct DuckDuckGo Search to bypass aggregators
+                        direct_link = await find_direct_application_link(company_name, job_title)
+                        if direct_link:
+                            final_link = direct_link
+                            print(f"[{source}] ✅ Found Source: {final_link}")
+                    except Exception as e:
+                        print(f"[{source}] Source Hunt Error: {e}")
+
                 display_title = f"[Rescan] {job_title}" if force_rescan else job_title
-                await notify_callback(analysis, job_link, display_title)
+                await notify_callback(analysis, final_link, display_title)
 
     # Dribbble
     dribbble_jobs = await scrape_dribbble()
